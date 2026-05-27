@@ -46,4 +46,9 @@ public class JwtService {
         return claims.getSubject();
     }
 
+    public boolean isTokenValid(String token, String email) {
+        final String username = extractUsername(token);
+        return username.equals(email);
+    }
+
 }
