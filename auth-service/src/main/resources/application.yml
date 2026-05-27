@@ -1,0 +1,80 @@
+server:
+  port: 8081
+
+spring:
+  application:
+    name: auth-service
+#  security:
+#    user:
+#      name: admin
+#      password: admin123
+
+  datasource:
+    url: jdbc:postgresql://localhost:5433/auth_db
+    username: postgres
+    password: India@123
+
+  jpa:
+    hibernate:
+     ddl-auto: update
+    show-sql: true
+
+
+eureka:
+  client:
+    register-with-eureka: false
+    fetch-registry: false
+
+logging:
+  level:
+    org.springframework.security: DEBUG
+    com.ecommerce.auth: DEBUG
+
+jwt:
+  secret: mysupersecuresecretkeymustbeatleast32chsdfwe2vs121cc4233d3arsl33434dong12345678Ab834bsj3jbji859439vj
+  expiration: 3600000
+
+
+
+#spring:
+#  datasource:
+#    url: jdbc:postgresql://localhost:5433/auth_db
+#    username: postgres
+#    password: India@123
+#    driver-class-name: org.postgresql.Driver
+#
+#  jpa:
+#    hibernate:
+#      ddl-auto: update
+#      database: postgresql
+#      database-platform: org.hibernate.dialect.PostgreSQLDialect
+#    properties:
+#      hibernate:
+#        format_sql: true
+
+#  cache:
+#    jcache:
+#      config: classpath:ehcache.xml
+#
+#  app:
+#    jwtSecret: mySecretKey123912738aopsgjnspkmndfsopkvajoirjg94gf2opfng2moknm
+#    jwtExpirationMs: 3000000
+#    jwtCookieName: springBootEcom
+#
+#  ecom:
+#    app:
+#      jwtCookieName: springBootEcom
+#
+#  springfox:
+#    documentation:
+#      swagger-ui:
+#        enabled: true
+#
+#server:
+#  port: 10070
+#
+#logging:
+#  level:
+#    org.springframework.cache: TRACE
+#    com.example.auth: DEBUG
+#    org.hibernate.SQL: DEBUG
