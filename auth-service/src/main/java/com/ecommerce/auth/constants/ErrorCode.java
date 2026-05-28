@@ -15,6 +15,8 @@ public enum ErrorCode {
 
     INTERNAL_SERVER_ERROR,
 
+    VALIDATION_ERROR,
+
     RESOURCE_NOT_FOUND;
 
 }

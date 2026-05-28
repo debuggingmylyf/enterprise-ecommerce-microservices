@@ -16,6 +16,8 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 
+//import static com.ecommerce.auth.controller.AuthController.log;
+
 @Service
 @RequiredArgsConstructor
 public class AuthService {
@@ -39,7 +41,7 @@ public class AuthService {
                 .build();
 
         userRepository.save(user);
-
+//        log.info("User registered successfully: {}", request.getEmail());
         return "User registered successfully";
     }
 

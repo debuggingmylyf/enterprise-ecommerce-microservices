@@ -4,6 +4,7 @@ import com.ecommerce.auth.dto.AuthResponse;
 import com.ecommerce.auth.dto.LoginRequest;
 import com.ecommerce.auth.dto.RegisterRequest;
 import com.ecommerce.auth.service.AuthService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 import org.slf4j.Logger;
@@ -19,7 +20,7 @@ public class AuthController {
     private static final Logger log = LoggerFactory.getLogger(AuthController.class);
 
     @PostMapping("/register")
-    public String register(@RequestBody RegisterRequest request){
+    public String register(@Valid @RequestBody RegisterRequest request){
 
         return authService.register(request);
     }

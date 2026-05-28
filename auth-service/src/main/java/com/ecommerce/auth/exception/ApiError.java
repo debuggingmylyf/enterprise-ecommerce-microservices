@@ -18,7 +18,7 @@ public class ApiError {
 
     private ErrorCode errorCode;
 
-    private String message;
+    private Object message;
 
     private String path;
 }

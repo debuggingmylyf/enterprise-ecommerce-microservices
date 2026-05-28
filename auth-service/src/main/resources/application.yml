@@ -10,7 +10,7 @@ spring:
 #      password: admin123
 
   datasource:
-    url: jdbc:postgresql://localhost:5433/auth_db
+    url: jdbc:postgresql://localhost:5432/auth_db
     username: postgres
     password: India@123
 
