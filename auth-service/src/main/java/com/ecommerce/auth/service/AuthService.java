@@ -4,12 +4,11 @@ import com.ecommerce.auth.dto.AuthResponse;
 import com.ecommerce.auth.dto.LoginRequest;
 import com.ecommerce.auth.dto.RegisterRequest;
 import com.ecommerce.auth.entity.User;
-import com.ecommerce.auth.entity.UserRole;
+import com.ecommerce.auth.constants.UserRole;
+import com.ecommerce.auth.exception.UserAlreadyExistException;
 import com.ecommerce.auth.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 
-import lombok.extern.java.Log;
-import org.apache.tomcat.util.net.openssl.ciphers.Authentication;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -27,6 +26,11 @@ public class AuthService {
     private final AuthenticationManager authenticationManager;
 
     public String register(RegisterRequest request){
+
+        if(userRepository.findByEmail(request.getEmail()).isPresent()){
+            throw new UserAlreadyExistException("User already exits with email: "+request.getEmail());
+        }
+
         User user = User.builder()
                 .email(request.getEmail())
                 .password(passwordEncoder.encode(request.getPassword()))

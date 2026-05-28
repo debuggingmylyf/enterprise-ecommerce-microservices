@@ -1,9 +1,9 @@
 package com.ecommerce.auth.entity;
 
+import com.ecommerce.auth.constants.UserRole;
 import jakarta.persistence.*;
 import lombok.*;
 
-import java.sql.Date;
 import java.time.LocalDateTime;
 import java.util.UUID;
 

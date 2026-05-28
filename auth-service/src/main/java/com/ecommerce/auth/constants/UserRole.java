@@ -1,4 +1,4 @@
-package com.ecommerce.auth.entity;
+package com.ecommerce.auth.constants;
 
 public enum UserRole {
     ROLE_USER,
