@@ -21,6 +21,11 @@ public class JwtService {
     @Value("${jwt.expiration}")
     private long jwtExpiration;
 
+    @Value("${jwt.access-expiration}")
+    private long jwtAccessExpiration;
+
+    @Value("${jwt.refresh-expiration}")
+    private long jwtRefreshExpiration;
 
     public String generateToken(String email){
         return Jwts.builder()
