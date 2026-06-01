@@ -53,7 +53,12 @@ public class AuthService {
                 )
         );
         String token = jwtService.generateToken(request.getEmail());
-        return new AuthResponse(token);
+        // AuthResponse has three fields (accessToken, refreshToken, tokenType) and Lombok generated
+        // an all-args constructor. Use the builder to set only the accessToken and tokenType.
+        return AuthResponse.builder()
+                .accessToken(token)
+                .tokenType("Bearer")
+                .build();
     }
 
 }
