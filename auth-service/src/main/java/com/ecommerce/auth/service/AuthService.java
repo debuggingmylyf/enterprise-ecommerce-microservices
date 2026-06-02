@@ -3,9 +3,12 @@ package com.ecommerce.auth.service;
 import com.ecommerce.auth.dto.AuthResponse;
 import com.ecommerce.auth.dto.LoginRequest;
 import com.ecommerce.auth.dto.RegisterRequest;
+import com.ecommerce.auth.entity.RefreshToken;
 import com.ecommerce.auth.entity.User;
 import com.ecommerce.auth.constants.UserRole;
+import com.ecommerce.auth.exception.ResourceNotFoundException;
 import com.ecommerce.auth.exception.UserAlreadyExistException;
+import com.ecommerce.auth.repository.RefreshTokenRepository;
 import com.ecommerce.auth.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 
@@ -23,6 +26,7 @@ import java.time.LocalDateTime;
 public class AuthService {
 
     private final UserRepository userRepository;
+    private final RefreshTokenRepository refreshTokenRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final AuthenticationManager authenticationManager;
@@ -52,11 +56,24 @@ public class AuthService {
                         request.getPassword()
                 )
         );
-        String token = jwtService.generateToken(request.getEmail());
-        // AuthResponse has three fields (accessToken, refreshToken, tokenType) and Lombok generated
-        // an all-args constructor. Use the builder to set only the accessToken and tokenType.
+        String accessToken = jwtService.generateAccessToken(request.getEmail());
+        String refreshToken = jwtService.generateRefreshToken(request.getEmail());
+
+        // find user to associate with refresh token
+        User user = userRepository.findByEmail(request.getEmail())
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with email: "+request.getEmail()));
+
+        // persist refresh token with expiry
+        RefreshToken tokenEntity = RefreshToken.builder()
+                .token(refreshToken)
+                .expiryDate(jwtService.getRefreshTokenExpiryDate())
+                .user(user)
+                .build();
+        refreshTokenRepository.save(tokenEntity);
+
         return AuthResponse.builder()
-                .accessToken(token)
+                .accessToken(accessToken)
+                .refreshToken(refreshToken)
                 .tokenType("Bearer")
                 .build();
     }
