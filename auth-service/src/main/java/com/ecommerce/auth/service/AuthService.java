@@ -46,7 +46,7 @@ public class AuthService {
 
         userRepository.save(user);
 //        log.info("User registered successfully: {}", request.getEmail());
-        return "User registered successfully";
+        return "User registration is success";
     }
 
     public AuthResponse login(LoginRequest request){
@@ -73,7 +73,6 @@ public class AuthService {
 
         return AuthResponse.builder()
                 .accessToken(accessToken)
-                .refreshToken(refreshToken)
                 .tokenType("Bearer")
                 .build();
     }
