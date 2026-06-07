@@ -10,6 +10,8 @@ import com.ecommerce.auth.exception.ResourceNotFoundException;
 import com.ecommerce.auth.exception.UserAlreadyExistException;
 import com.ecommerce.auth.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -21,6 +23,8 @@ import java.time.LocalDateTime;
 @Service
 @RequiredArgsConstructor
 public class AuthService {
+
+    private static final Logger log = LoggerFactory.getLogger(AuthService.class);
 
     private static final String TOKEN_TYPE = "Bearer";
 
@@ -44,7 +48,8 @@ public class AuthService {
                 .build();
 
         userRepository.save(user);
-        return "User registration is success";
+        log.info("User registered: {}", user.getEmail());
+        return "User registration is successful";
     }
 
     @Transactional
@@ -61,6 +66,7 @@ public class AuthService {
 
         String accessToken = jwtService.generateAccessToken(user.getEmail());
         RefreshToken refreshToken = refreshTokenService.createRefreshToken(user);
+        log.info("User logged in: {}", user.getEmail());
 
         return AuthResponse.builder()
                 .accessToken(accessToken)
@@ -77,7 +83,8 @@ public class AuthService {
 
     @Transactional
     public String logout(String refreshToken) {
-        refreshTokenService.revokeRefreshToken(refreshToken);
+        String email = refreshTokenService.revokeRefreshToken(refreshToken);
+        log.info("User logged out: {}", email);
         return "Logout is success";
     }
 }

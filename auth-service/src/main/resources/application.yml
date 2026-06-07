@@ -10,13 +10,13 @@ spring:
 #      password: admin123
 
   datasource:
-    url: jdbc:postgresql://localhost:5433/auth_db
-    username: postgres
-    password: India@123
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5433/auth_db}
+    username: ${SPRING_DATASOURCE_USERNAME:postgres}
+    password: ${SPRING_DATASOURCE_PASSWORD:India@123}
 
   jpa:
     hibernate:
-     ddl-auto: update
+     ddl-auto: ${SPRING_JPA_HIBERNATE_DDL_AUTO:update}
     show-sql: true
 
 
@@ -31,10 +31,10 @@ logging:
     com.ecommerce.auth: DEBUG
 
 jwt:
-  secret: mysupersecuresecretkeymustbeatleast32chsdfwe2vs121cc4233d3arsl33434dong12345678Ab834bsj3jbji859439vj
-  expiration: 3600000
-  access-expiration: 700000
-  refresh-expiration: 9000000
+  secret: ${JWT_SECRET:mysupersecuresecretkeymustbeatleast32chsdfwe2vs121cc4233d3arsl33434dong12345678Ab834bsj3jbji859439vj}
+  expiration: ${JWT_EXPIRATION:3600000}
+  access-expiration: ${JWT_ACCESS_EXPIRATION:700000}
+  refresh-expiration: ${JWT_REFRESH_EXPIRATION:9000000}
 
 
 
@@ -47,7 +47,7 @@ jwt:
 #
 #  jpa:
 #    hibernate:
-#      ddl-auto: update
+#      ddl-auto: ${SPRING_JPA_HIBERNATE_DDL_AUTO:update}
 #      database: postgresql
 #      database-platform: org.hibernate.dialect.PostgreSQLDialect
 #    properties:

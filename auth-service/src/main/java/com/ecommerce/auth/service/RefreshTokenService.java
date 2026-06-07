@@ -10,6 +10,8 @@ import com.ecommerce.auth.repository.UserRepository;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.JwtException;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,6 +20,8 @@ import java.time.LocalDateTime;
 @Service
 @RequiredArgsConstructor
 public class RefreshTokenService {
+
+    private static final Logger log = LoggerFactory.getLogger(RefreshTokenService.class);
 
     private static final String TOKEN_TYPE = "Bearer";
 
@@ -35,7 +39,9 @@ public class RefreshTokenService {
                 .user(user)
                 .build();
 
-        return refreshTokenRepository.save(refreshToken);
+        RefreshToken savedRefreshToken = refreshTokenRepository.save(refreshToken);
+        log.info("Refresh token issued for user: {}", user.getEmail());
+        return savedRefreshToken;
     }
 
     @Transactional
@@ -55,11 +61,12 @@ public class RefreshTokenService {
     }
 
     @Transactional
-    public void revokeRefreshToken(String token) {
+    public String revokeRefreshToken(String token) {
         RefreshToken refreshToken = refreshTokenRepository.findByToken(token)
                 .orElseThrow(() -> new InvalidTokenException("Refresh token is not recognized"));
 
         revoke(refreshToken);
+        return refreshToken.getUser().getEmail();
     }
 
     @Transactional
