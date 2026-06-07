@@ -17,6 +17,8 @@ public enum ErrorCode {
 
     VALIDATION_ERROR,
 
+    DATA_INTEGRITY_VIOLATION,
+
     RESOURCE_NOT_FOUND;
 
 }
