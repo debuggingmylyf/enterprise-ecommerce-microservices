@@ -1,0 +1,18 @@
+server:
+  port: 8282
+spring:
+  application:
+    name: API-GATEWAY
+
+  cloud:
+    gateway:
+      route:
+        id: auth-service
+        uri: lb://AUTH-SERVICE
+        predicates:
+          - Path=/auth/**
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka
