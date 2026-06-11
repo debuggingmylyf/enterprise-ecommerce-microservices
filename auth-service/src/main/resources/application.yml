@@ -5,12 +5,6 @@ spring:
   application:
     name: AUTH-SERVICE
 
-
-#  security:
-#    user:
-#      name: admin
-#      password: admin123
-
   datasource:
     url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5433/auth_db}
     username: ${SPRING_DATASOURCE_USERNAME:postgres}
