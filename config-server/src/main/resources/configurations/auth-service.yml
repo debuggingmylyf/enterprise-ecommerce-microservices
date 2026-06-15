@@ -1,0 +1,36 @@
+server:
+  port: 8081
+
+spring:
+  application:
+    name: AUTH-SERVICE
+
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5433/auth_db}
+    username: ${SPRING_DATASOURCE_USERNAME:postgres}
+    password: ${SPRING_DATASOURCE_PASSWORD:India@123}
+
+  jpa:
+    hibernate:
+      ddl-auto: ${SPRING_JPA_HIBERNATE_DDL_AUTO:update}
+    show-sql: true
+
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka
+
+logging:
+  level:
+    org.springframework.security: DEBUG
+    com.ecommerce.auth: DEBUG
+
+jwt:
+  secret: ${JWT_SECRET:mysupersecuresecretkeymustbeatleast32chsdfwe2vs121cc4233d3arsl33434dong12345678Ab834bsj3jbji859439vj}
+  expiration: ${JWT_EXPIRATION:3600000}
+  access-expiration: ${JWT_ACCESS_EXPIRATION:700000}
+  refresh-expiration: ${JWT_REFRESH_EXPIRATION:9000000}
+
+custom:
+  message: Hello From Config Server
