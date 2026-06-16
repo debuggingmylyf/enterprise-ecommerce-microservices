@@ -2,6 +2,7 @@ package com.ecommerce.product.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.UuidGenerator;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
@@ -21,7 +22,8 @@ import java.util.UUID;
 public class ProductPricing {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
+    @UuidGenerator
+    @Column(nullable = false, updatable = false)
     private UUID id;
 
     @OneToOne(fetch = FetchType.LAZY)

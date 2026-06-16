@@ -1,13 +1,26 @@
 package com.ecommerce.product.entity;
 
+import com.ecommerce.product.enums.ProductStatus;
 import jakarta.persistence.*;
 import lombok.*;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
+import org.hibernate.annotations.UuidGenerator;
+
+import java.util.*;
+
+import static jakarta.persistence.CascadeType.MERGE;
+import static jakarta.persistence.CascadeType.PERSIST;
 
 @Entity
-@Table(name = "product")
+@Table(
+        name = "product",
+        indexes = {
+                @Index(name = "idx_product_name",
+                        columnList = "name"),
+
+                @Index(name = "idx_product_sku",
+                        columnList = "sku_code")
+        }
+)
 @Getter
 @Setter
 @NoArgsConstructor
@@ -16,7 +29,8 @@ import java.util.UUID;
 public class Product extends BaseEntity {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
+    @UuidGenerator
+    @Column(nullable = false, updatable = false)
     private UUID id;
 
     @Column(nullable = false, length = 200)
@@ -41,21 +55,36 @@ public class Product extends BaseEntity {
     @JoinColumn(name = "category_id", nullable = false)
     private Category category;
 
-    @Column(nullable = false, length = 30)
-    private String status;
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private ProductStatus status;
 
     @Builder.Default
     @Column(name = "active")
     private Boolean active = true;
 
-    @OneToOne(mappedBy = "product", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @OneToOne(mappedBy = "product", cascade = {
+            CascadeType.PERSIST,
+            CascadeType.MERGE
+    }, fetch = FetchType.LAZY)
     private ProductPricing pricing;
 
     @Builder.Default
-    @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "product", cascade = CascadeType.ALL)
     private List<ProductImage> images = new ArrayList<>();
 
     @Builder.Default
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<ProductAttribute> attributes = new ArrayList<>();
+    private Set<ProductAttribute> attributes = new HashSet<>();
+
+
+    public void addImage(ProductImage image) {
+        images.add(image);
+        image.setProduct(this);
+    }
+
+    public void removeImage(ProductImage image) {
+        images.remove(image);
+        image.setProduct(null);
+    }
 }
