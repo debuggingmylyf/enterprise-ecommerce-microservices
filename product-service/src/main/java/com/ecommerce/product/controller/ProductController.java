@@ -43,6 +43,10 @@ public class ProductController {
 
     private final ProductService productService;
 
+    private static String sanitize(final String value) {
+        return value == null ? null : value.replaceAll("[\n\r]", "_");
+    }
+
     /**
      * Creates a new product in DRAFT status.
      *
@@ -53,7 +57,7 @@ public class ProductController {
     public ResponseEntity<CreateProductResponse> createProduct(
             @Valid @RequestBody final CreateProductRequest request) {
 
-        log.info("POST /api/v1/products – creating product '{}'", request.getName());
+        log.info("POST /api/v1/products – creating product '{}'", sanitize(request.getName()));
         return ResponseEntity.status(HttpStatus.CREATED).body(productService.createProduct(request));
     }
 
@@ -93,7 +97,7 @@ public class ProductController {
      */
     @GetMapping("/slug/{slug}")
     public ResponseEntity<ProductResponse> getProductBySlug(@PathVariable final String slug) {
-        log.debug("GET /api/v1/products/slug/{}", slug);
+        log.debug("GET /api/v1/products/slug/{}", sanitize(slug));
         return ResponseEntity.ok(productService.getProductBySlug(slug));
     }
 
@@ -131,7 +135,7 @@ public class ProductController {
             @PathVariable final UUID id,
             @Valid @RequestBody final UpdateProductStatusRequest request) {
 
-        log.info("PATCH /api/v1/products/{}/status – new status={}", id, request.getStatus());
+        log.info("PATCH /api/v1/products/{}/status – new status={}", id, sanitize(String.valueOf(request.getStatus())));
         return ResponseEntity.ok(productService.updateProductStatus(id, request));
     }
 
