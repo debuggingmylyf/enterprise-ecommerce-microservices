@@ -1,4 +1,4 @@
-package com.ecommerce.product.serviceImpl;
+package com.ecommerce.product.service.serviceImpl;
 
 import com.ecommerce.product.dto.request.category.CreateCategoryRequest;
 import com.ecommerce.product.dto.request.category.UpdateCategoryReqest;
