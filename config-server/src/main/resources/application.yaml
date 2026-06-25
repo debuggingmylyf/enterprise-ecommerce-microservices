@@ -10,7 +10,7 @@ spring:
     config:
       server:
         native:
-          search-locations: file:./local-config
+          search-locations: classpath:/configurations/
 
 custom:
   message: Hello from local config!

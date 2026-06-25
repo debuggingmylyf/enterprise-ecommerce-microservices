@@ -2,6 +2,7 @@ package com.ecommerce.auth.service;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.JwtBuilder;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -24,8 +25,7 @@ public class JwtService {
     @Value("${jwt.secret}")
     private String secretKey;
 
-    @Value("${jwt.expiration}")
-    private long jwtExpiration;
+    // legacy single expiration property removed in favor of separate access/refresh expirations
 
     @Value("${jwt.access-expiration}")
     private long jwtAccessExpiration;
@@ -33,20 +33,36 @@ public class JwtService {
     @Value("${jwt.refresh-expiration}")
     private long jwtRefreshExpiration;
 
+    // Backwards-compatible convenience: generate an access token for the given email (no role)
     public String generateToken(String email) {
-        return generateAccessToken(email);
+        return generateAccessToken(email, null);
     }
 
-    public String generateAccessToken(String email) {
-        return generateToken(email, ACCESS_TOKEN_TYPE, jwtAccessExpiration);
+    // Generate an access token for the given email and role
+    public String generateToken(String email, String role) {
+        return generateAccessToken(email, role);
     }
 
+    public String generateAccessToken(String email, String role) {
+        return generateToken(email, role, ACCESS_TOKEN_TYPE, jwtAccessExpiration);
+    }
+
+    // Backwards-compatible convenience: generate a refresh token for the given email (no role)
     public String generateRefreshToken(String email) {
-        return generateToken(email, REFRESH_TOKEN_TYPE, jwtRefreshExpiration);
+        return generateRefreshToken(email, null);
+    }
+
+    // Generate a refresh token for the given email and role
+    public String generateRefreshToken(String email, String role) {
+        return generateToken(email, role, REFRESH_TOKEN_TYPE, jwtRefreshExpiration);
     }
 
     public String extractUsername(String token) {
         return extractAllClaims(token).getSubject();
+    }
+
+    public String extractRole(String token) {
+        return extractAllClaims(token).get("role", String.class);
     }
 
     public boolean isAccessToken(String token) {
@@ -67,11 +83,16 @@ public class JwtService {
         return LocalDateTime.ofInstant(instant, ZoneId.systemDefault());
     }
 
-    private String generateToken(String email, String tokenType, long expiration) {
-        return Jwts.builder()
+    private String generateToken(String email, String role, String tokenType, long expiration) {
+        JwtBuilder builder = Jwts.builder()
                 .setSubject(email)
-                .setId(UUID.randomUUID().toString())
-                .claim(TOKEN_TYPE_CLAIM, tokenType)
+                .setId(UUID.randomUUID().toString());
+
+        if (role != null) {
+            builder.claim("role", role);
+        }
+
+        return builder.claim(TOKEN_TYPE_CLAIM, tokenType)
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(System.currentTimeMillis() + expiration))
                 .signWith(getSignInKey())

@@ -64,7 +64,7 @@ public class AuthService {
         User user = userRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with email: " + request.getEmail()));
 
-        String accessToken = jwtService.generateAccessToken(user.getEmail());
+        String accessToken = jwtService.generateAccessToken(user.getEmail(), user.getRole().name());
         RefreshToken refreshToken = refreshTokenService.createRefreshToken(user);
         log.info("User logged in: {}", user.getEmail());
 
