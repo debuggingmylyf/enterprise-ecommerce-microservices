@@ -12,6 +12,8 @@ spring:
           uri: lb://AUTH-SERVICE
           predicates:
             - Path=/api/v1/auth/**
+          filters:
+            - RewritePath=/api/v1/auth/(.*), /auth/$1
         - id: product-service
           uri: lb://PRODUCT-SERVICE
           predicates:
