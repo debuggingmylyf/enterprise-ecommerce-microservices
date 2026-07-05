@@ -1,7 +1,8 @@
 ### IntelliJ IDEA ###
+.vscode/
 .idea
 .ollamassist
-.local-config
+.local-config/  
 *.iws
 *.iml
 *.ipr
