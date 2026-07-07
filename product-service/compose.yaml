@@ -1,0 +1,46 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: inventory-postgres
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-product_db}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-India@123}
+    ports:
+      - "${POSTGRES_PORT:-5435}:5432"
+    volumes:
+      - inventory-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-product_db}" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  product-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: enterprise-ecommerce/product-service:latest
+    container_name: product-service
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      SERVER_PORT: 8082
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-product_db}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-postgres}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-India@123}
+      SPRING_JPA_HIBERNATE_DDL_AUTO: ${SPRING_JPA_HIBERNATE_DDL_AUTO:-update}
+      # JWT_SECRET: ${JWT_SECRET:-mysupersecuresecretkeymustbeatleast32chsdfwe2vs121cc4233d3arsl33434dong12345678Ab834bsj3jbji859439vj}
+      # JWT_EXPIRATION: ${JWT_EXPIRATION:-3600000}
+      # JWT_ACCESS_EXPIRATION: ${JWT_ACCESS_EXPIRATION:-700000}
+      # JWT_REFRESH_EXPIRATION: ${JWT_REFRESH_EXPIRATION:-9000000}
+      EUREKA_CLIENT_REGISTER_WITH_EUREKA: "false"
+      EUREKA_CLIENT_FETCH_REGISTRY: "false"
+    ports:
+      - "${PRODUCT_SERVICE_PORT:-8082}:8082"
+    restart: unless-stopped
+
+volumes:
+  inventory-postgres-data:
