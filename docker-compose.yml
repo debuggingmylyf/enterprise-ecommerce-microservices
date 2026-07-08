@@ -1,0 +1,276 @@
+# ============================================================
+# Enterprise E-Commerce Microservices — Root Docker Compose
+# Starts all services in proper dependency order:
+#   1. Databases (postgres instances)
+#   2. config-server
+#   3. discovery-server (Eureka)
+#   4. auth-service, product-service, inventory-service
+#   5. api-gateway
+#
+# All secrets are loaded exclusively from .env (never hardcoded here).
+# Copy .env.example to .env and fill in your values before running.
+# ============================================================
+
+services:
+
+  # ──────────────────────────────────────────
+  # DATABASES
+  # ──────────────────────────────────────────
+
+  auth-postgres:
+    image: postgres:17-alpine
+    container_name: auth-postgres
+    environment:
+      POSTGRES_DB: ${AUTH_POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    ports:
+      - "${AUTH_POSTGRES_PORT}:5432"
+    volumes:
+      - auth-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${AUTH_POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - ecommerce-net
+
+  product-postgres:
+    image: postgres:17-alpine
+    container_name: product-postgres
+    environment:
+      POSTGRES_DB: ${PRODUCT_POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    ports:
+      - "${PRODUCT_POSTGRES_PORT}:5432"
+    volumes:
+      - product-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${PRODUCT_POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - ecommerce-net
+
+  inventory-postgres:
+    image: postgres:17-alpine
+    container_name: inventory-postgres
+    environment:
+      POSTGRES_DB: ${INVENTORY_POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    ports:
+      - "${INVENTORY_POSTGRES_PORT}:5432"
+    volumes:
+      - inventory-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${INVENTORY_POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - ecommerce-net
+
+  # ──────────────────────────────────────────
+  # INFRASTRUCTURE — Config Server (starts first)
+  # ──────────────────────────────────────────
+
+  config-server:
+    build:
+      context: ./config-server
+      dockerfile: Dockerfile
+    image: enterprise-ecommerce/config-server:latest
+    container_name: config-server
+    environment:
+      SERVER_PORT: 8888
+      # Secrets the config-server must resolve when serving configuration files
+      # to client services (Spring Cloud Config resolves ${VAR} server-side)
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRATION: ${JWT_EXPIRATION}
+      JWT_ACCESS_EXPIRATION: ${JWT_ACCESS_EXPIRATION}
+      JWT_REFRESH_EXPIRATION: ${JWT_REFRESH_EXPIRATION}
+      SPRING_JPA_HIBERNATE_DDL_AUTO: ${SPRING_JPA_HIBERNATE_DDL_AUTO}
+      # Eureka URL used when config-server resolves the placeholder in served configs
+      EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: http://discovery-server:8761/eureka
+    ports:
+      - "${CONFIG_SERVER_PORT}:8888"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8888/actuator/health | grep -q '\"status\":\"UP\"' || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    restart: unless-stopped
+    networks:
+      - ecommerce-net
+
+  # ──────────────────────────────────────────
+  # INFRASTRUCTURE — Discovery Server (Eureka)
+  # ──────────────────────────────────────────
+
+  discovery-server:
+    build:
+      context: ./discovery-server
+      dockerfile: Dockerfile
+    image: enterprise-ecommerce/discovery-server:latest
+    container_name: discovery-server
+    depends_on:
+      config-server:
+        condition: service_healthy
+    environment:
+      SERVER_PORT: 8761
+      CONFIG_SERVER_URI: http://config-server:8888
+      EUREKA_INSTANCE_HOSTNAME: discovery-server
+    ports:
+      - "${DISCOVERY_SERVER_PORT}:8761"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8761/actuator/health | grep -q '\"status\":\"UP\"' || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    restart: unless-stopped
+    networks:
+      - ecommerce-net
+
+  # ──────────────────────────────────────────
+  # BUSINESS SERVICES
+  # ──────────────────────────────────────────
+
+  auth-service:
+    build:
+      context: ./auth-service
+      dockerfile: Dockerfile
+    image: enterprise-ecommerce/auth-service:latest
+    container_name: auth-service
+    depends_on:
+      auth-postgres:
+        condition: service_healthy
+      config-server:
+        condition: service_healthy
+      discovery-server:
+        condition: service_healthy
+    environment:
+      SERVER_PORT: 8081
+      SPRING_DATASOURCE_URL: jdbc:postgresql://auth-postgres:5432/${AUTH_POSTGRES_DB}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
+      SPRING_JPA_HIBERNATE_DDL_AUTO: ${SPRING_JPA_HIBERNATE_DDL_AUTO}
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRATION: ${JWT_EXPIRATION}
+      JWT_ACCESS_EXPIRATION: ${JWT_ACCESS_EXPIRATION}
+      JWT_REFRESH_EXPIRATION: ${JWT_REFRESH_EXPIRATION}
+      EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: http://discovery-server:8761/eureka
+      CONFIG_SERVER_URI: http://config-server:8888
+    ports:
+      - "${AUTH_SERVICE_PORT}:8081"
+    restart: unless-stopped
+    networks:
+      - ecommerce-net
+
+  product-service:
+    build:
+      context: ./product-service
+      dockerfile: Dockerfile
+    image: enterprise-ecommerce/product-service:latest
+    container_name: product-service
+    depends_on:
+      product-postgres:
+        condition: service_healthy
+      config-server:
+        condition: service_healthy
+      discovery-server:
+        condition: service_healthy
+    environment:
+      SERVER_PORT: 8082
+      SPRING_DATASOURCE_URL: jdbc:postgresql://product-postgres:5432/${PRODUCT_POSTGRES_DB}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
+      SPRING_JPA_HIBERNATE_DDL_AUTO: ${SPRING_JPA_HIBERNATE_DDL_AUTO}
+      EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: http://discovery-server:8761/eureka
+      CONFIG_SERVER_URI: http://config-server:8888
+    ports:
+      - "${PRODUCT_SERVICE_PORT}:8082"
+    restart: unless-stopped
+    networks:
+      - ecommerce-net
+
+  inventory-service:
+    build:
+      context: ./inventory-service
+      dockerfile: Dockerfile
+    image: enterprise-ecommerce/inventory-service:latest
+    container_name: inventory-service
+    depends_on:
+      inventory-postgres:
+        condition: service_healthy
+      config-server:
+        condition: service_healthy
+      discovery-server:
+        condition: service_healthy
+    environment:
+      SERVER_PORT: 8083
+      SPRING_DATASOURCE_URL: jdbc:postgresql://inventory-postgres:5432/${INVENTORY_POSTGRES_DB}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
+      SPRING_JPA_HIBERNATE_DDL_AUTO: ${SPRING_JPA_HIBERNATE_DDL_AUTO}
+      EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: http://discovery-server:8761/eureka
+      CONFIG_SERVER_URI: http://config-server:8888
+    ports:
+      - "${INVENTORY_SERVICE_PORT}:8083"
+    restart: unless-stopped
+    networks:
+      - ecommerce-net
+
+  # ──────────────────────────────────────────
+  # API GATEWAY (starts last — needs Eureka + all services)
+  # ──────────────────────────────────────────
+
+  api-gateway:
+    build:
+      context: ./api-gateway
+      dockerfile: Dockerfile
+    image: enterprise-ecommerce/api-gateway:latest
+    container_name: api-gateway
+    depends_on:
+      config-server:
+        condition: service_healthy
+      discovery-server:
+        condition: service_healthy
+      auth-service:
+        condition: service_started
+      product-service:
+        condition: service_started
+      inventory-service:
+        condition: service_started
+    environment:
+      SERVER_PORT: 8282
+      EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: http://discovery-server:8761/eureka
+      CONFIG_SERVER_URI: http://config-server:8888
+      JWT_SECRET: ${JWT_SECRET}
+    ports:
+      - "${API_GATEWAY_PORT}:8282"
+    restart: unless-stopped
+    networks:
+      - ecommerce-net
+
+# ──────────────────────────────────────────
+# VOLUMES & NETWORKS
+# ──────────────────────────────────────────
+
+volumes:
+  auth-postgres-data:
+  product-postgres-data:
+  inventory-postgres-data:
+
+networks:
+  ecommerce-net:
+    driver: bridge

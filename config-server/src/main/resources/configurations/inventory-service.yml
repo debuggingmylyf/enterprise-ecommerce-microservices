@@ -6,9 +6,9 @@ spring:
     name: INVENTORY-SERVICE
 
   datasource:
-    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5433/inventory_db}
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5436/inventory_db}
     username: ${SPRING_DATASOURCE_USERNAME:postgres}
-    password: ${SPRING_DATASOURCE_PASSWORD:India@123}
+    password: ${SPRING_DATASOURCE_PASSWORD}
     driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
@@ -22,11 +22,10 @@ spring:
     enabled: true
     locations: classpath:db/migration
 
-
 eureka:
   client:
     service-url:
-      defaultZone: http://localhost:8761/eureka/
+      defaultZone: ${EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE:http://localhost:8761/eureka}
   instance:
     prefer-ip-address: true
 
