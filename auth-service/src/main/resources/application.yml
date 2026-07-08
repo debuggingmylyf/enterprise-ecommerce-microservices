@@ -1,50 +1,5 @@
 spring:
-  config:
-    import: configserver:http://localhost:8888
   application:
     name: auth-service
-
-
-
-#spring:
-#  datasource:
-#    url: jdbc:postgresql://localhost:5433/auth_db
-#    username: postgres
-#    password: India@123
-#    driver-class-name: org.postgresql.Driver
-#
-#  jpa:
-#    hibernate:
-#      ddl-auto: ${SPRING_JPA_HIBERNATE_DDL_AUTO:update}
-#      database: postgresql
-#      database-platform: org.hibernate.dialect.PostgreSQLDialect
-#    properties:
-#      hibernate:
-#        format_sql: true
-
-#  cache:
-#    jcache:
-#      config: classpath:ehcache.xml
-#
-#  app:
-#    jwtSecret: mySecretKey123912738aopsgjnspkmndfsopkvajoirjg94gf2opfng2moknm
-#    jwtExpirationMs: 3000000
-#    jwtCookieName: springBootEcom
-#
-#  ecom:
-#    app:
-#      jwtCookieName: springBootEcom
-#
-#  springfox:
-#    documentation:
-#      swagger-ui:
-#        enabled: true
-#
-#server:
-#  port: 10070
-#
-#logging:
-#  level:
-#    org.springframework.cache: TRACE
-#    com.example.auth: DEBUG
-#    org.hibernate.SQL: DEBUG
+  config:
+    import: optional:configserver:${CONFIG_SERVER_URI:http://localhost:8888}

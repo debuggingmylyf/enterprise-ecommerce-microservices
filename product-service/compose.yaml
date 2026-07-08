@@ -1,17 +1,24 @@
+# Standalone compose for product-service development.
+# Secrets and config are loaded from the root .env file.
+# Run from the project root: docker compose -f product-service/compose.yaml up --build
+# Or from this directory:    docker compose --env-file ../.env up --build
+
 services:
   postgres:
     image: postgres:17-alpine
-    container_name: inventory-postgres
+    container_name: product-postgres
+    env_file:
+      - ../.env
     environment:
-      POSTGRES_DB: ${POSTGRES_DB:-product_db}
-      POSTGRES_USER: ${POSTGRES_USER:-postgres}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-India@123}
+      POSTGRES_DB: ${PRODUCT_POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     ports:
-      - "${POSTGRES_PORT:-5435}:5432"
+      - "${PRODUCT_POSTGRES_PORT}:5432"
     volumes:
-      - inventory-postgres-data:/var/lib/postgresql/data
+      - product-postgres-data:/var/lib/postgresql/data
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-product_db}" ]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${PRODUCT_POSTGRES_DB}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -23,24 +30,23 @@ services:
       dockerfile: Dockerfile
     image: enterprise-ecommerce/product-service:latest
     container_name: product-service
+    env_file:
+      - ../.env
     depends_on:
       postgres:
         condition: service_healthy
     environment:
       SERVER_PORT: 8082
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-product_db}
-      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-postgres}
-      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-India@123}
-      SPRING_JPA_HIBERNATE_DDL_AUTO: ${SPRING_JPA_HIBERNATE_DDL_AUTO:-update}
-      # JWT_SECRET: ${JWT_SECRET:-mysupersecuresecretkeymustbeatleast32chsdfwe2vs121cc4233d3arsl33434dong12345678Ab834bsj3jbji859439vj}
-      # JWT_EXPIRATION: ${JWT_EXPIRATION:-3600000}
-      # JWT_ACCESS_EXPIRATION: ${JWT_ACCESS_EXPIRATION:-700000}
-      # JWT_REFRESH_EXPIRATION: ${JWT_REFRESH_EXPIRATION:-9000000}
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${PRODUCT_POSTGRES_DB}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
+      SPRING_JPA_HIBERNATE_DDL_AUTO: ${SPRING_JPA_HIBERNATE_DDL_AUTO}
       EUREKA_CLIENT_REGISTER_WITH_EUREKA: "false"
       EUREKA_CLIENT_FETCH_REGISTRY: "false"
+      CONFIG_SERVER_URI: ""
     ports:
-      - "${PRODUCT_SERVICE_PORT:-8082}:8082"
+      - "${PRODUCT_SERVICE_PORT}:8082"
     restart: unless-stopped
 
 volumes:
-  inventory-postgres-data:
+  product-postgres-data:
