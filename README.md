@@ -11,6 +11,7 @@ This is a microservices-based e-commerce platform with centralized authenticatio
 3. **API Gateway** (Port 8282) - Single entry point with JWT validation & RBAC
 4. **Auth Service** (Port 8081) - User authentication and JWT token generation
 5. **Product Service** (Port 8082) - Product and category management
+6. **Inventory Service** (Port 8083) - Stock management, reservations & warehouse tracking
 
 ## Security Architecture
 
@@ -56,12 +57,22 @@ All authentication and authorization is handled at the **API Gateway** level:
 | `/api/v1/products/**` | DELETE | ADMIN | Delete product |
 | `/api/v1/categories` | GET | All authenticated | View categories |
 | `/api/v1/categories` | POST, PUT, DELETE | ADMIN | Manage categories |
+| `/api/v1/inventory` | POST | ADMIN | Create inventory record |
+| `/api/v1/inventory/{productId}/adjust` | PATCH | ADMIN | Adjust stock quantity |
+| `/api/v1/inventory/{productId}/threshold` | PATCH | ADMIN | Update low-stock threshold |
+| `/api/v1/inventory/reserve` | PATCH | INTERNAL_SERVICE | Reserve stock for order |
+| `/api/v1/inventory/release` | PATCH | INTERNAL_SERVICE | Release reservation |
+| `/api/v1/inventory/confirm` | PATCH | INTERNAL_SERVICE | Confirm stock deduction |
+| `/api/v1/inventory/{productId}` | GET | All authenticated | Get inventory by product |
+| `/api/v1/inventory/check/{productId}` | GET | All authenticated | Check stock availability |
+| `/api/v1/inventory/low-stock` | GET | All authenticated | List low-stock products |
 
 ### User Roles
 
 - **ROLE_USER**: Basic authenticated user (read-only access)
 - **ROLE_SELLER**: Can create and update products
-- **ROLE_ADMIN**: Full access to all resources
+- **ROLE_ADMIN**: Full access to all resources including inventory management
+- **ROLE_INTERNAL_SERVICE**: Service-to-service calls for stock reservation workflows
 
 ## Frontend Integration
 
@@ -190,6 +201,100 @@ Content-Type: application/json
 }
 ```
 
+#### Inventory (Authenticated)
+
+**Create Inventory Record** (ADMIN only)
+```http
+POST /api/v1/inventory
+Authorization: Bearer {accessToken}
+Content-Type: application/json
+
+{
+  "productId": "uuid",
+  "warehouseCode": "WH-DELHI",
+  "initialQuantity": 100,
+  "lowStockThreshold": 10
+}
+```
+
+**Adjust Stock** (ADMIN only)
+```http
+PATCH /api/v1/inventory/{productId}/adjust
+Authorization: Bearer {accessToken}
+Content-Type: application/json
+
+{
+  "adjustmentType": "INCREASE",
+  "quantity": 50,
+  "reason": "New shipment received"
+}
+```
+
+> `adjustmentType` accepts: `INCREASE` (adds stock) or `DECREASE` (removes stock, e.g. damaged goods).
+
+**Update Low-Stock Threshold** (ADMIN only)
+```http
+PATCH /api/v1/inventory/{productId}/threshold?warehouseCode=WH-DELHI&threshold=20
+Authorization: Bearer {accessToken}
+```
+
+**Reserve Stock** (INTERNAL_SERVICE)
+```http
+PATCH /api/v1/inventory/reserve
+Authorization: Bearer {accessToken}
+Content-Type: application/json
+
+{
+  "productId": "uuid",
+  "warehouseCode": "WH-DELHI",
+  "quantity": 2
+}
+```
+
+**Release Reservation** (INTERNAL_SERVICE — order cancelled)
+```http
+PATCH /api/v1/inventory/release
+Authorization: Bearer {accessToken}
+Content-Type: application/json
+
+{
+  "productId": "uuid",
+  "warehouseCode": "WH-DELHI",
+  "quantity": 2
+}
+```
+
+**Confirm Stock Deduction** (INTERNAL_SERVICE — order fulfilled)
+```http
+PATCH /api/v1/inventory/confirm
+Authorization: Bearer {accessToken}
+Content-Type: application/json
+
+{
+  "productId": "uuid",
+  "warehouseCode": "WH-DELHI",
+  "quantity": 2
+}
+```
+
+**Get Inventory for a Product**
+```http
+GET /api/v1/inventory/{productId}?warehouseCode=WH-DELHI
+Authorization: Bearer {accessToken}
+```
+
+**Check Stock Availability**
+```http
+GET /api/v1/inventory/check/{productId}
+Authorization: Bearer {accessToken}
+```
+
+**List Low-Stock Products**
+```http
+GET /api/v1/inventory/low-stock
+Authorization: Bearer {accessToken}
+```
+
 ## Setup Instructions
 
 ### Prerequisites
@@ -204,6 +309,7 @@ Content-Type: application/json
 -- Create databases
 CREATE DATABASE auth_db;
 CREATE DATABASE product_db;
+CREATE DATABASE inventory_db;
 ```
 
 ### Configuration
@@ -249,15 +355,52 @@ cd product-service
 mvn spring-boot:run
 ```
 
+6. **Inventory Service**
+```bash
+cd inventory-service
+mvn spring-boot:run
+```
+
 ### Health Checks
 
 - Config Server: http://localhost:8888/actuator/health
 - Discovery Server: http://localhost:8761
 - API Gateway: http://localhost:8282/actuator/health
-- Auth Service: http://localhost:8081/actuator/health (if available)
-- Product Service: http://localhost:8082/actuator/health (if available)
+- Auth Service: http://localhost:8081/actuator/health
+- Product Service: http://localhost:8082/actuator/health
+- Inventory Service: http://localhost:8083/actuator/health
+- Inventory Swagger UI: http://localhost:8083/swagger-ui.html
 
 ## Development Notes
+
+### Inventory Service — Stock Lifecycle
+
+The inventory service enforces a three-phase stock lifecycle to support saga-style order processing:
+
+```
+Reserve:   available -= qty  |  reserved += qty   (order placed)
+Release:   reserved -= qty   |  available += qty   (order cancelled)
+Confirm:   reserved -= qty                         (order fulfilled)
+```
+
+> Negative stock is never allowed. A `reserve` call will fail if `available < requested`.
+
+**Database schema** (`inventory` table):
+
+| Column | Type | Description |
+|---|---|---|
+| `id` | UUID | Primary key |
+| `product_id` | UUID | Reference to product |
+| `warehouse_code` | VARCHAR | Logical warehouse identifier (e.g. `WH-DELHI`) |
+| `available_quantity` | INT | Stock ready to be sold |
+| `reserved_quantity` | INT | Stock held for pending orders |
+| `low_stock_threshold` | INT | Alert level (default: 10) |
+| `active` | BOOLEAN | Soft-disable flag |
+| `version` | BIGINT | Optimistic locking |
+| `created_at/updated_at` | TIMESTAMP | Audit timestamps |
+| `created_by/updated_by` | VARCHAR | Audit user |
+
+Indexes: `idx_inventory_product_id`, `idx_inventory_warehouse_code`.
 
 ### Adding New Microservices
 
@@ -291,6 +434,26 @@ curl -X POST http://localhost:8282/api/v1/auth/login \
 **Access Protected Resource**
 ```bash
 curl -X GET http://localhost:8282/api/v1/products \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```
+
+**Create Inventory Record** (ADMIN)
+```bash
+curl -X POST http://localhost:8282/api/v1/inventory \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"productId":"YOUR_PRODUCT_UUID","warehouseCode":"WH-DELHI","initialQuantity":100,"lowStockThreshold":10}'
+```
+
+**Check Stock Availability**
+```bash
+curl -X GET http://localhost:8282/api/v1/inventory/check/YOUR_PRODUCT_UUID \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```
+
+**List Low-Stock Products**
+```bash
+curl -X GET http://localhost:8282/api/v1/inventory/low-stock \
   -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
 ```
 
