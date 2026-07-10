@@ -30,6 +30,3 @@ jwt:
   expiration: ${JWT_EXPIRATION:3600000}
   access-expiration: ${JWT_ACCESS_EXPIRATION:700000}
   refresh-expiration: ${JWT_REFRESH_EXPIRATION:9000000}
-
-custom:
-  message: Hello From Config Server
