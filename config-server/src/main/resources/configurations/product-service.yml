@@ -28,3 +28,49 @@ eureka:
   client:
     service-url:
       defaultZone: ${EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE:http://localhost:8761/eureka}
+
+# Enable Feign circuit breaker (wires the fallbackFactory on InventoryClient)
+feign:
+  circuitbreaker:
+    enabled: true
+
+# Resilience4j circuit breaker configuration for inventory-service calls
+resilience4j:
+  circuitbreaker:
+    instances:
+      INVENTORY-SERVICE:
+        # Slide window: evaluate last 5 calls to decide state transitions
+        slidingWindowSize: 5
+        # Open the circuit if ≥ 50% of calls fail
+        failureRateThreshold: 50
+        # Keep the circuit OPEN for 10 s before transitioning to HALF-OPEN
+        waitDurationInOpenState: 10s
+        # Allow 2 probe calls in HALF-OPEN to test recovery
+        permittedNumberOfCallsInHalfOpenState: 2
+        # Register with Spring Boot Actuator /actuator/health
+        registerHealthIndicator: true
+        # Treat these exceptions as failures that count toward the failure rate
+        recordExceptions:
+          - java.io.IOException
+          - java.util.concurrent.TimeoutException
+          - feign.FeignException
+  timelimiter:
+    instances:
+      INVENTORY-SERVICE:
+        # Abort the Feign call if inventory-service doesn't respond within 3 s
+        timeoutDuration: 3s
+        cancelRunningFuture: true
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,circuitbreakers
+  health:
+    circuitbreakers:
+      enabled: true
+
+logging:
+  level:
+    com.ecommerce.product: DEBUG
+    org.springframework.web: INFO

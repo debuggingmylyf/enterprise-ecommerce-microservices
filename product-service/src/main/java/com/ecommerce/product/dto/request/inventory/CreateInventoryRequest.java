@@ -1,22 +1,32 @@
 package com.ecommerce.product.dto.request.inventory;
 
-import java.util.UUID;
-
 import lombok.Builder;
 import lombok.Getter;
-import lombok.Setter;
 
+import java.util.UUID;
+
+/**
+ * Request payload sent from product-service to inventory-service when provisioning
+ * a new inventory record upon product creation.
+ *
+ * <p>Field names mirror the inventory-service {@code CreateInventoryRequest} schema.</p>
+ */
 @Builder
 @Getter
-@Setter
 public class CreateInventoryRequest {
 
+    /** The product this inventory entry belongs to. */
     private UUID productId;
 
-    private Integer availableQuantity;
-
-    private Integer lowStockThreshold;
-
+    /** Logical warehouse identifier (e.g. "WH-DEFAULT"). */
     private String warehouseCode;
 
+    /** Initial available stock quantity. */
+    private int initialQuantity;
+
+    /**
+     * Quantity at or below which this record is flagged as low-stock.
+     * Defaults to 10 if not provided by the caller.
+     */
+    private int lowStockThreshold;
 }

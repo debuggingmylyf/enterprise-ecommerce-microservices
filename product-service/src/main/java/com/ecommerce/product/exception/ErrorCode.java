@@ -30,6 +30,9 @@ public enum ErrorCode {
     /** The request conflicts with a unique database constraint. */
     DATA_INTEGRITY_VIOLATION,
 
+    /** Inventory provisioning for a newly created product failed; manual provisioning required. */
+    INVENTORY_PROVISIONING_FAILED,
+
     /** An unexpected server-side error occurred. */
     INTERNAL_SERVER_ERROR
 }
