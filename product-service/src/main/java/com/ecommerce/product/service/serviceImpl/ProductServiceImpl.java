@@ -1,9 +1,12 @@
 package com.ecommerce.product.service.serviceImpl;
 
+import com.ecommerce.product.client.InventoryClient;
 import com.ecommerce.product.dto.common.PaginatedResponse;
+import com.ecommerce.product.dto.request.inventory.CreateInventoryRequest;
 import com.ecommerce.product.dto.request.product.CreateProductRequest;
 import com.ecommerce.product.dto.request.product.UpdateProductRequest;
 import com.ecommerce.product.dto.request.product.UpdateProductStatusRequest;
+import com.ecommerce.product.dto.response.inventory.CreateInventoryResponse;
 import com.ecommerce.product.dto.response.product.CreateProductResponse;
 import com.ecommerce.product.dto.response.product.ProductResponse;
 import com.ecommerce.product.entity.Category;
@@ -25,10 +28,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -39,6 +42,12 @@ import java.util.stream.Collectors;
  *
  * <p>Manages the full product aggregate: core product fields, pricing,
  * images, and attributes. All mutation operations are wrapped in transactions.
+ *
+ * <p>After persisting a new product, the service calls the Inventory Service via
+ * {@link InventoryClient} to provision a default stock record. If the Inventory
+ * Service is unavailable the circuit breaker fallback fires and the product is
+ * still created — the response will carry an {@code inventoryStatus} of
+ * {@code "DEFERRED"} so operators know to provision manually.
  */
 @Service
 @RequiredArgsConstructor
@@ -46,9 +55,19 @@ public class ProductServiceImpl implements ProductService {
 
     private static final Logger log = LoggerFactory.getLogger(ProductServiceImpl.class);
 
+    /** Default warehouse used when auto-provisioning inventory on product creation. */
+    private static final String DEFAULT_WAREHOUSE = "WH-DEFAULT";
+
+    /** Default initial stock quantity assigned to a newly created product. */
+    private static final int DEFAULT_INITIAL_QUANTITY = 0;
+
+    /** Default low-stock alert threshold for auto-provisioned inventory. */
+    private static final int DEFAULT_LOW_STOCK_THRESHOLD = 10;
+
     private final ProductRepository productRepository;
     private final CategoryRepository categoryRepository;
     private final ProductMapper productMapper;
+    private final InventoryClient inventoryClient;
 
     /**
      * {@inheritDoc}
@@ -128,12 +147,70 @@ public class ProductServiceImpl implements ProductService {
         final Product saved = productRepository.save(product);
         log.info("Product created: id={}, sku={}", saved.getId(), saved.getSkuCode());
 
+        // -----------------------------------------------------------------------
+        // Attempt automatic inventory provisioning via inventory-service.
+        // If the service is down, the circuit breaker fallback returns a sentinel
+        // response (inventoryId == null). The product creation still succeeds;
+        // operators must provision inventory manually in that case.
+        // -----------------------------------------------------------------------
+        final String inventoryStatus = provisionDefaultInventory(saved.getId());
+
+        final String responseMessage = "DEFERRED".equals(inventoryStatus)
+                ? "Product created successfully (DRAFT). "
+                        + "Inventory provisioning was deferred – inventory-service is currently "
+                        + "unavailable. Please provision inventory for product "
+                        + saved.getId() + " in warehouse " + DEFAULT_WAREHOUSE + " manually."
+                : "Product created successfully and is in DRAFT state. "
+                        + "Inventory provisioned in " + DEFAULT_WAREHOUSE + ".";
+
         return CreateProductResponse.builder()
                 .productId(saved.getId())
                 .skuCode(saved.getSkuCode())
                 .status(saved.getStatus())
-                .message("Product created successfully and is in DRAFT state")
+                .message(responseMessage)
+                .inventoryStatus(inventoryStatus)
                 .build();
+    }
+
+    /**
+     * Calls the Inventory Service to create a default stock record for a newly
+     * saved product. Uses {@link InventoryClient} which is protected by a
+     * Resilience4j circuit breaker named {@code inventoryService}.
+     *
+     * @param productId the UUID of the product that was just persisted
+     * @return {@code "PROVISIONED"} on success, {@code "DEFERRED"} when the
+     *         circuit breaker fallback fires (inventory-service unreachable)
+     */
+    private String provisionDefaultInventory(final UUID productId) {
+        try {
+            final CreateInventoryRequest inventoryRequest = CreateInventoryRequest.builder()
+                    .productId(productId)
+                    .warehouseCode(DEFAULT_WAREHOUSE)
+                    .initialQuantity(DEFAULT_INITIAL_QUANTITY)
+                    .lowStockThreshold(DEFAULT_LOW_STOCK_THRESHOLD)
+                    .build();
+
+            final ResponseEntity<CreateInventoryResponse> response =
+                    inventoryClient.provisionInventory(inventoryRequest);
+
+            final CreateInventoryResponse body = response.getBody();
+
+            if (body != null && body.getInventoryId() != null) {
+                log.info("Inventory provisioned: inventoryId={}, productId={}, warehouse={}",
+                        body.getInventoryId(), productId, DEFAULT_WAREHOUSE);
+                return "PROVISIONED";
+            } else {
+                // Fallback was triggered – inventoryId is null in the sentinel response
+                log.warn("Inventory provisioning deferred for productId={} (circuit breaker fallback)",
+                        productId);
+                return "DEFERRED";
+            }
+        } catch (final Exception ex) {
+            // Safety net: any unexpected exception must not prevent product creation
+            log.error("Unexpected error during inventory provisioning for productId={}: {}",
+                    productId, ex.getMessage(), ex);
+            return "DEFERRED";
+        }
     }
 
     /**

@@ -132,6 +132,32 @@ public class InventoryController {
         // -----------------------------------------------------------------------
 
         /**
+         * Provisions a new inventory record for a product, called internally by
+         * other services (e.g. product-service upon product creation).
+         *
+         * <p>
+         * <strong>Role required:</strong> INTERNAL_SERVICE (enforced at gateway)
+         *
+         * <p>
+         * This endpoint is intentionally separate from the ADMIN
+         * {@code POST /api/v1/inventory} endpoint so that the API gateway can
+         * apply different role policies without mixing concerns.
+         *
+         * @param request the validated creation payload
+         * @return {@code 201 Created} with a lightweight
+         *         {@link CreateInventoryResponse}
+         */
+        @PostMapping("/internal/provision")
+        public ResponseEntity<CreateInventoryResponse> provisionInventory(
+                        @Valid @RequestBody final CreateInventoryRequest request) {
+
+                log.info("POST /api/v1/inventory/internal/provision – productId={}, warehouse={}",
+                                request.getProductId(), sanitize(request.getWarehouseCode()));
+                return ResponseEntity.status(HttpStatus.CREATED)
+                                .body(inventoryService.createInventory(request));
+        }
+
+        /**
          * Reserves stock for a pending order.
          *
          * <p>
