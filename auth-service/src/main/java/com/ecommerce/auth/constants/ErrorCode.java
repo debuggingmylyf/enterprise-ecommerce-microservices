@@ -1,9 +1,18 @@
 package com.ecommerce.auth.constants;
 
+/**
+ * Auth-service–specific error codes.
+ *
+ * <p>Cross-cutting codes (e.g. {@link com.ecommerce.common.exception.ErrorCode#VALIDATION_ERROR},
+ * {@link com.ecommerce.common.exception.ErrorCode#DATA_INTEGRITY_VIOLATION}) live in the shared
+ * {@link com.ecommerce.common.exception.ErrorCode} enum. Only codes unique to this service
+ * belong here.
+ */
 public enum ErrorCode {
+
     USER_NOT_FOUND,
 
-    USER_ALREADY_EXITS,
+    USER_ALREADY_EXISTS,
 
     TOKEN_EXPIRED,
 
@@ -20,5 +29,4 @@ public enum ErrorCode {
     DATA_INTEGRITY_VIOLATION,
 
     RESOURCE_NOT_FOUND;
-
 }

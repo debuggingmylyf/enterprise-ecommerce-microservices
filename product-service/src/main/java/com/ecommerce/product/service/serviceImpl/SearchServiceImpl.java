@@ -1,6 +1,6 @@
 package com.ecommerce.product.service.serviceImpl;
 
-import com.ecommerce.product.dto.common.PaginatedResponse;
+import com.ecommerce.common.response.PaginatedResponse;
 import com.ecommerce.product.dto.request.product.ProductSearchRequest;
 import com.ecommerce.product.dto.response.product.ProductResponse;
 import com.ecommerce.product.entity.Product;

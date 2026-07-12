@@ -112,6 +112,35 @@
 			<artifactId>spring-boot-starter-test</artifactId>
 			<scope>test</scope>
 		</dependency>
+
+		<!-- ============================================================ -->
+		<!-- ecommerce-common shared library -->
+		<!-- ============================================================ -->
+		<dependency>
+			<groupId>com.ecommerce</groupId>
+			<artifactId>common-exception</artifactId>
+			<version>1.0.0-SNAPSHOT</version>
+		</dependency>
+		<dependency>
+			<groupId>com.ecommerce</groupId>
+			<artifactId>common-response</artifactId>
+			<version>1.0.0-SNAPSHOT</version>
+		</dependency>
+		<dependency>
+			<groupId>com.ecommerce</groupId>
+			<artifactId>common-util</artifactId>
+			<version>1.0.0-SNAPSHOT</version>
+		</dependency>
+		<dependency>
+			<groupId>com.ecommerce</groupId>
+			<artifactId>common-dto</artifactId>
+			<version>1.0.0-SNAPSHOT</version>
+		</dependency>
+		<dependency>
+			<groupId>com.ecommerce</groupId>
+			<artifactId>common-security</artifactId>
+			<version>1.0.0-SNAPSHOT</version>
+		</dependency>
 	</dependencies>
 	<dependencyManagement>
 		<dependencies>

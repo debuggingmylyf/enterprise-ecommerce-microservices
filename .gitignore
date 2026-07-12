@@ -7,3 +7,9 @@
 *.iml
 *.ipr
 .env
+AUTH_SERVICE_FIX_SUMMARY.md
+SERVICES_FIX_SUMMARY.md
+inventory_service_plan.md
+local-config
+local-config/*
+

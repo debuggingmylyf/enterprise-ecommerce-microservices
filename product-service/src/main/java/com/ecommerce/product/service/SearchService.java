@@ -1,6 +1,6 @@
 package com.ecommerce.product.service;
 
-import com.ecommerce.product.dto.common.PaginatedResponse;
+import com.ecommerce.common.response.PaginatedResponse;
 import com.ecommerce.product.dto.request.product.ProductSearchRequest;
 import com.ecommerce.product.dto.response.product.ProductResponse;
 import org.springframework.data.domain.Pageable;
