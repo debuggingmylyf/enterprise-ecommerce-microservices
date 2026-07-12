@@ -1,6 +1,6 @@
 package com.ecommerce.product.controller;
 
-import com.ecommerce.product.dto.common.PaginatedResponse;
+import com.ecommerce.common.response.PaginatedResponse;
 import com.ecommerce.product.dto.request.product.CreateProductRequest;
 import com.ecommerce.product.dto.request.product.UpdateProductRequest;
 import com.ecommerce.product.dto.request.product.UpdateProductStatusRequest;

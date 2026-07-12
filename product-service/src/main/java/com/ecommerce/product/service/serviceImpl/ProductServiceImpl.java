@@ -1,7 +1,7 @@
 package com.ecommerce.product.service.serviceImpl;
 
 import com.ecommerce.product.client.InventoryClient;
-import com.ecommerce.product.dto.common.PaginatedResponse;
+import com.ecommerce.common.response.PaginatedResponse;
 import com.ecommerce.product.dto.request.inventory.CreateInventoryRequest;
 import com.ecommerce.product.dto.request.product.CreateProductRequest;
 import com.ecommerce.product.dto.request.product.UpdateProductRequest;
@@ -16,13 +16,13 @@ import com.ecommerce.product.entity.ProductImage;
 import com.ecommerce.product.entity.ProductPricing;
 import com.ecommerce.product.enums.ProductStatus;
 import com.ecommerce.product.exception.BusinessException;
-import com.ecommerce.product.exception.ErrorCode;
+import com.ecommerce.product.exception.ProductErrorCode;
 import com.ecommerce.product.exception.ResourceNotFoundException;
 import com.ecommerce.product.mapper.ProductMapper;
 import com.ecommerce.product.repository.CategoryRepository;
 import com.ecommerce.product.repository.ProductRepository;
 import com.ecommerce.product.service.ProductService;
-import com.ecommerce.product.util.SlugGenerator;
+import com.ecommerce.common.util.SlugGenerator;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -91,7 +91,7 @@ public class ProductServiceImpl implements ProductService {
 
         final String skuCode = generateSkuCode(request.getName(), request.getBrand());
         if (productRepository.existsBySkuCode(skuCode)) {
-            throw new BusinessException(ErrorCode.DUPLICATE_SKU,
+            throw new BusinessException(ProductErrorCode.DUPLICATE_SKU,
                     "A product with SKU '" + skuCode + "' already exists");
         }
 

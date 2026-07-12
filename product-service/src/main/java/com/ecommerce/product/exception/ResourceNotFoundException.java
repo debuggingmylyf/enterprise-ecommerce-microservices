@@ -1,30 +1,36 @@
 package com.ecommerce.product.exception;
 
 /**
- * Thrown when a requested domain entity (Product, Category, etc.) cannot be
- * located in the data store.
+ * Thrown when a requested product or category entity cannot be located.
  *
- * <p>Maps to HTTP {@code 404 Not Found} in {@link GlobalExceptionHandler}.
+ * <p>Maps to HTTP {@code 404 Not Found} via the shared
+ * {@link com.ecommerce.common.exception.handler.GlobalExceptionHandler}.
+ *
+ * <p>Usage:
+ * <pre>{@code
+ * throw new ResourceNotFoundException(ProductErrorCode.PRODUCT_NOT_FOUND,
+ *         "Product with id " + id + " was not found");
+ * }</pre>
  */
-public class ResourceNotFoundException extends RuntimeException {
+public class ResourceNotFoundException extends com.ecommerce.common.exception.ResourceNotFoundException {
 
     /**
-     * Constructs a new {@code ResourceNotFoundException} with the specified detail message.
+     * Constructs a {@code ResourceNotFoundException} with a product-specific {@link ProductErrorCode}.
      *
-     * @param message human-readable description of the missing resource
+     * @param errorCode product-domain error code
+     * @param message   human-readable description of the missing resource
+     */
+    public ResourceNotFoundException(final ProductErrorCode errorCode, final String message) {
+        super(errorCode.name(), message);
+    }
+
+    /**
+     * Constructs a {@code ResourceNotFoundException} with only a message,
+     * using the generic {@code RESOURCE_NOT_FOUND} code.
+     *
+     * @param message human-readable description
      */
     public ResourceNotFoundException(final String message) {
         super(message);
     }
-
-    /**
-     * Constructs a new {@code ResourceNotFoundException} with a detail message and root cause.
-     *
-     * @param message human-readable description of the missing resource
-     * @param cause   the underlying exception that triggered this one
-     */
-    public ResourceNotFoundException(final String message, final Throwable cause) {
-        super(message, cause);
-    }
 }
-

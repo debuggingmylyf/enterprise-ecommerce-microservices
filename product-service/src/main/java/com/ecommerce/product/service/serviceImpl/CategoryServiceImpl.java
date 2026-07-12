@@ -5,7 +5,7 @@ import com.ecommerce.product.dto.request.category.UpdateCategoryReqest;
 import com.ecommerce.product.dto.response.category.CategoryResponse;
 import com.ecommerce.product.entity.Category;
 import com.ecommerce.product.exception.BusinessException;
-import com.ecommerce.product.exception.ErrorCode;
+import com.ecommerce.product.exception.ProductErrorCode;
 import com.ecommerce.product.exception.ResourceNotFoundException;
 import com.ecommerce.product.mapper.CategoryMapper;
 import com.ecommerce.product.repository.CategoryRepository;
@@ -44,7 +44,7 @@ public class CategoryServiceImpl implements CategoryService {
     public CategoryResponse createCategory(final CreateCategoryRequest request) {
         if (categoryRepository.existsByName(request.getName().trim())) {
             throw new BusinessException(
-                    ErrorCode.DUPLICATE_CATEGORY_NAME,
+                    ProductErrorCode.DUPLICATE_CATEGORY_NAME,
                     "A category with the name '" + request.getName() + "' already exists"
             );
         }
@@ -78,7 +78,7 @@ public class CategoryServiceImpl implements CategoryService {
 
         if (categoryRepository.existsByNameAndIdNot(request.getName().trim(), id)) {
             throw new BusinessException(
-                    ErrorCode.DUPLICATE_CATEGORY_NAME,
+                    ProductErrorCode.DUPLICATE_CATEGORY_NAME,
                     "A category with the name '" + request.getName() + "' already exists"
             );
         }

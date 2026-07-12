@@ -1,34 +1,26 @@
 package com.ecommerce.product.exception;
 
 /**
- * Thrown when a domain business rule is violated (e.g. duplicate SKU,
- * invalid price range, deactivated product operation).
+ * Thrown when a domain business rule specific to the Product Service is violated
+ * (e.g. duplicate SKU, invalid price range, deactivated product operation).
  *
- * <p>Maps to HTTP {@code 422 Unprocessable Entity} in {@link GlobalExceptionHandler}.
+ * <p>Maps to HTTP {@code 422 Unprocessable Entity} via the shared
+ * {@link com.ecommerce.common.exception.handler.GlobalExceptionHandler}.
+ *
+ * <p>Usage:
+ * <pre>{@code
+ * throw new BusinessException(ProductErrorCode.DUPLICATE_SKU, "SKU 'X' already exists");
+ * }</pre>
  */
-public class BusinessException extends RuntimeException {
-
-    /** Structured error code for machine-readable API responses. */
-    private final ErrorCode errorCode;
+public class BusinessException extends com.ecommerce.common.exception.BusinessException {
 
     /**
-     * Constructs a new {@code BusinessException} with an error code and detail message.
+     * Constructs a {@code BusinessException} with a product-specific {@link ProductErrorCode}.
      *
-     * @param errorCode structured {@link ErrorCode} identifying the violation
-     * @param message   human-readable description of the rule that was violated
+     * @param errorCode product-domain error code
+     * @param message   human-readable description of the violated rule
      */
-    public BusinessException(final ErrorCode errorCode, final String message) {
-        super(message);
-        this.errorCode = errorCode;
-    }
-
-    /**
-     * Returns the structured {@link ErrorCode} associated with this exception.
-     *
-     * @return the error code; never {@code null}
-     */
-    public ErrorCode getErrorCode() {
-        return errorCode;
+    public BusinessException(final ProductErrorCode errorCode, final String message) {
+        super(errorCode.name(), message);
     }
 }
-
