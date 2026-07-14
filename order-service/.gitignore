@@ -1,4 +1,5 @@
 HELP.md
+order_service_implementation_plan.md
 target/
 .mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
