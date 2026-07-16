@@ -27,12 +27,13 @@ CREATE TABLE orders (
 );
 
 CREATE TABLE order_items (
-    id          UUID            PRIMARY KEY,
-    order_id    UUID            NOT NULL,
-    product_id  UUID            NOT NULL,
-    quantity    INTEGER         NOT NULL,
-    unit_price  DECIMAL(12,2)   NOT NULL,
-    subtotal    DECIMAL(12,2)   NOT NULL,
+    id              UUID            PRIMARY KEY,
+    order_id        UUID            NOT NULL,
+    product_id      UUID            NOT NULL,
+    warehouse_code  VARCHAR(50)     NOT NULL,
+    quantity        INTEGER         NOT NULL,
+    unit_price      DECIMAL(12,2)   NOT NULL,
+    subtotal        DECIMAL(12,2)   NOT NULL,
 
     CONSTRAINT fk_order_items_order
         FOREIGN KEY (order_id)
