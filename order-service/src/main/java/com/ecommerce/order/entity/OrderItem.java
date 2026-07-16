@@ -31,6 +31,9 @@ public class OrderItem {
     @Column(name = "product_id", nullable = false)
     private UUID productId;
 
+    @Column(name = "warehouse_code", nullable = false, length = 50)
+    private String warehouseCode;
+
     @Column(name = "quantity", nullable = false)
     private Integer quantity;
 
