@@ -22,6 +22,10 @@ spring:
           uri: lb://INVENTORY-SERVICE
           predicates:
             - Path=/api/v1/inventory/**
+        - id: order-service
+          uri: lb://ORDER-SERVICE
+          predicates:
+            - Path=/api/v1/orders/**,/api/v1/internal/orders/**
       default-filters:
         - DedupeResponseHeader=Access-Control-Allow-Credentials Access-Control-Allow-Origin
 

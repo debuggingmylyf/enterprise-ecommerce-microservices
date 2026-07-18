@@ -77,6 +77,26 @@ services:
     networks:
       - ecommerce-net
 
+  order-postgres:
+    image: postgres:17-alpine
+    container_name: order-postgres
+    environment:
+      POSTGRES_DB: ${ORDER_POSTGRES_DB:order_db}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    ports:
+      - "${ORDER_POSTGRES_PORT:5437}:5432"
+    volumes:
+      - order-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${ORDER_POSTGRES_DB:order_db}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - ecommerce-net
+
   # ──────────────────────────────────────────
   # INFRASTRUCTURE — Config Server (starts first)
   # ──────────────────────────────────────────
@@ -230,6 +250,33 @@ services:
     networks:
       - ecommerce-net
 
+  order-service:
+    build:
+      context: ./order-service
+      dockerfile: Dockerfile
+    image: enterprise-ecommerce/order-service:latest
+    container_name: order-service
+    depends_on:
+      order-postgres:
+        condition: service_healthy
+      config-server:
+        condition: service_healthy
+      discovery-server:
+        condition: service_healthy
+    environment:
+      SERVER_PORT: 8084
+      SPRING_DATASOURCE_URL: jdbc:postgresql://order-postgres:5432/${ORDER_POSTGRES_DB:order_db}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
+      SPRING_JPA_HIBERNATE_DDL_AUTO: ${SPRING_JPA_HIBERNATE_DDL_AUTO}
+      EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: http://discovery-server:8761/eureka
+      CONFIG_SERVER_URI: http://config-server:8888
+    ports:
+      - "${ORDER_SERVICE_PORT:8084}:8084"
+    restart: unless-stopped
+    networks:
+      - ecommerce-net
+
   # ──────────────────────────────────────────
   # API GATEWAY (starts last — needs Eureka + all services)
   # ──────────────────────────────────────────
@@ -251,6 +298,8 @@ services:
         condition: service_started
       inventory-service:
         condition: service_started
+      order-service:
+        condition: service_started
     environment:
       SERVER_PORT: 8282
       EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: http://discovery-server:8761/eureka
@@ -270,6 +319,7 @@ volumes:
   auth-postgres-data:
   product-postgres-data:
   inventory-postgres-data:
+  order-postgres-data:
 
 networks:
   ecommerce-net:

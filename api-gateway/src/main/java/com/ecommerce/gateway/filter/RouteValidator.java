@@ -44,6 +44,33 @@ public class RouteValidator {
             return true;
         }
 
+        if (path.contains("/api/v1/internal/orders")) {
+            return "ROLE_INTERNAL_SERVICE".equals(userRole) || "INTERNAL_SERVICE".equals(userRole);
+        }
+
+        if (path.contains("/api/v1/orders")) {
+            // GET /api/v1/orders (admin fetch all)
+            if (method == HttpMethod.GET && "/api/v1/orders".equals(path)) {
+                return "ROLE_ADMIN".equals(userRole);
+            }
+            // PATCH /api/v1/orders/{id}/status
+            if (method == HttpMethod.PATCH && path.endsWith("/status")) {
+                return "ROLE_ADMIN".equals(userRole);
+            }
+            return true;
+        }
+
+        if (path.contains("/api/v1/inventory")) {
+            if (path.contains("/internal/provision") || path.contains("/reserve") || path.contains("/release") || path.contains("/confirm")) {
+                return "ROLE_INTERNAL_SERVICE".equals(userRole) || "INTERNAL_SERVICE".equals(userRole);
+            }
+            // Admin operations
+            if (method == HttpMethod.POST || method == HttpMethod.PUT || method == HttpMethod.PATCH) {
+                return "ROLE_ADMIN".equals(userRole);
+            }
+            return true;
+        }
+
         return true;
     }
 }

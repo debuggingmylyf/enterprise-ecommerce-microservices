@@ -46,6 +46,7 @@ public class AuthenticationFilter implements GlobalFilter, Ordered {
 
             String email = jwtService.extractUsername(token);
             String role = jwtService.extractRole(token);
+            String userId = jwtService.extractUserId(token);
 
             if (!routeValidator.hasRequiredRole(request, role)) {
                 log.warn("Access denied for user {} with role {} to {}", email, role, request.getPath());
@@ -53,10 +54,15 @@ public class AuthenticationFilter implements GlobalFilter, Ordered {
                 return exchange.getResponse().setComplete();
             }
 
-            request = exchange.getRequest().mutate()
+            var requestBuilder = exchange.getRequest().mutate()
                     .header("X-User-Email", email)
-                    .header("X-User-Role", role)
-                    .build();
+                    .header("X-User-Role", role);
+
+            if (userId != null) {
+                requestBuilder.header("X-User-Id", userId);
+            }
+
+            request = requestBuilder.build();
 
             log.debug("Authenticated user {} with role {} accessing {}", email, role, request.getPath());
         }
