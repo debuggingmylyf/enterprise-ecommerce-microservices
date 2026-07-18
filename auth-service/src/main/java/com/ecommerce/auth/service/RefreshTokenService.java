@@ -51,7 +51,7 @@ public class RefreshTokenService {
 
         revoke(existingToken);
         RefreshToken rotatedToken = createRefreshToken(existingToken.getUser());
-        String accessToken = jwtService.generateAccessToken(existingToken.getUser().getEmail(), existingToken.getUser().getRole().name());
+        String accessToken = jwtService.generateAccessToken(existingToken.getUser().getEmail(), existingToken.getUser().getRole().name(), existingToken.getUser().getId());
 
         return AuthResponse.builder()
                 .accessToken(accessToken)

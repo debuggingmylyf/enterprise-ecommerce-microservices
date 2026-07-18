@@ -44,7 +44,11 @@ public class JwtService {
     }
 
     public String generateAccessToken(String email, String role) {
-        return generateToken(email, role, ACCESS_TOKEN_TYPE, jwtAccessExpiration);
+        return generateAccessToken(email, role, null);
+    }
+
+    public String generateAccessToken(String email, String role, UUID userId) {
+        return generateToken(email, role, userId, ACCESS_TOKEN_TYPE, jwtAccessExpiration);
     }
 
     // Backwards-compatible convenience: generate a refresh token for the given email (no role)
@@ -54,7 +58,11 @@ public class JwtService {
 
     // Generate a refresh token for the given email and role
     public String generateRefreshToken(String email, String role) {
-        return generateToken(email, role, REFRESH_TOKEN_TYPE, jwtRefreshExpiration);
+        return generateRefreshToken(email, role, null);
+    }
+
+    public String generateRefreshToken(String email, String role, UUID userId) {
+        return generateToken(email, role, userId, REFRESH_TOKEN_TYPE, jwtRefreshExpiration);
     }
 
     public String extractUsername(String token) {
@@ -84,12 +92,19 @@ public class JwtService {
     }
 
     private String generateToken(String email, String role, String tokenType, long expiration) {
+        return generateToken(email, role, null, tokenType, expiration);
+    }
+
+    private String generateToken(String email, String role, UUID userId, String tokenType, long expiration) {
         JwtBuilder builder = Jwts.builder()
                 .setSubject(email)
                 .setId(UUID.randomUUID().toString());
 
         if (role != null) {
             builder.claim("role", role);
+        }
+        if (userId != null) {
+            builder.claim("userId", userId.toString());
         }
 
         return builder.claim(TOKEN_TYPE_CLAIM, tokenType)
