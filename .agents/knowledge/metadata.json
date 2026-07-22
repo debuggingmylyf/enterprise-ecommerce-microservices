@@ -1,0 +1,34 @@
+{
+  "title": "Enterprise E-Commerce Microservices — Project Architecture Memory",
+  "description": "Comprehensive single-file reference of the entire microservices architecture: 7 services (Config Server, Discovery Server, API Gateway, Auth, Product, Inventory, Order), their entities, endpoints, inter-service Feign communication flows, RBAC rules, database schemas, shared common library modules, Docker Compose setup, configuration properties, and coding conventions. Designed for instant agent lookup without re-analysing the full project tree.",
+  "created": "2026-07-22",
+  "lastUpdated": "2026-07-22",
+  "tags": [
+    "architecture",
+    "microservices",
+    "spring-boot",
+    "spring-cloud",
+    "jwt",
+    "rbac",
+    "feign",
+    "eureka",
+    "postgres",
+    "docker",
+    "ecommerce"
+  ],
+  "artifacts": [
+    "project-architecture-memory.md"
+  ],
+  "references": [
+    "README.md",
+    "docker-compose.yml",
+    ".env.example",
+    "api-gateway/src/main/java/com/ecommerce/gateway/filter/RouteValidator.java",
+    "api-gateway/src/main/java/com/ecommerce/gateway/filter/AuthenticationFilter.java",
+    "auth-service/src/main/java/com/ecommerce/auth/service/AuthService.java",
+    "product-service/src/main/java/com/ecommerce/product/service/serviceImpl/ProductServiceImpl.java",
+    "inventory-service/src/main/java/com/ecommerce/inventory/service/serviceImpl/InventoryServiceImpl.java",
+    "order-service/src/main/java/com/ecommerce/order/service/serviceImpl/OrderServiceImpl.java",
+    "ecommerce-common/pom.xml"
+  ]
+}
