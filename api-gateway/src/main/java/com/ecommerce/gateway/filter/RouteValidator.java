@@ -14,7 +14,8 @@ public class RouteValidator {
             "/api/v1/auth/register",
             "/api/v1/auth/login",
             "/api/v1/auth/refresh",
-            "/api/v1/auth/logout"
+            "/api/v1/auth/logout",
+            "/api/v1/payments/webhook"
     );
 
     public Predicate<ServerHttpRequest> isSecured = request -> {
@@ -57,6 +58,25 @@ public class RouteValidator {
             if (method == HttpMethod.PATCH && path.endsWith("/status")) {
                 return "ROLE_ADMIN".equals(userRole);
             }
+            return true;
+        }
+
+        // Internal payment endpoints (service-to-service)
+        if (path.contains("/api/v1/internal/payments")) {
+            return "ROLE_INTERNAL_SERVICE".equals(userRole) || "INTERNAL_SERVICE".equals(userRole);
+        }
+
+        // Payment endpoints
+        if (path.contains("/api/v1/payments")) {
+            // POST /api/v1/payments/refund (Admin only)
+            if (method == HttpMethod.POST && path.endsWith("/refund")) {
+                return "ROLE_ADMIN".equals(userRole);
+            }
+            // GET /api/v1/payments (admin fetch all)
+            if (method == HttpMethod.GET && "/api/v1/payments".equals(path)) {
+                return "ROLE_ADMIN".equals(userRole);
+            }
+            // All other payment endpoints: any authenticated user (ownership checked in service)
             return true;
         }
 

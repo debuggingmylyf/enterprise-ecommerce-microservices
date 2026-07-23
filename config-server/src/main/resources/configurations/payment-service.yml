@@ -1,12 +1,12 @@
 server:
-  port: 8083
+  port: 8085
 
 spring:
   application:
-    name: INVENTORY-SERVICE
+    name: PAYMENT-SERVICE
 
   datasource:
-    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5433/inventory_db}
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5438/payment_db}
     username: ${SPRING_DATASOURCE_USERNAME:postgres}
     password: ${SPRING_DATASOURCE_PASSWORD}
     driver-class-name: org.postgresql.Driver
@@ -21,6 +21,12 @@ spring:
   flyway:
     enabled: true
     locations: classpath:db/migration
+
+# ── Stripe Configuration ──
+stripe:
+  secret-key: ${STRIPE_SECRET_KEY}
+  webhook-secret: ${STRIPE_WEBHOOK_SECRET:}
+  auto-confirm: ${STRIPE_AUTO_CONFIRM:true}
 
 eureka:
   client:
@@ -37,5 +43,5 @@ management:
 
 logging:
   level:
-    com.ecommerce.inventory: DEBUG
+    com.ecommerce.payment: DEBUG
     org.springframework.web: INFO
