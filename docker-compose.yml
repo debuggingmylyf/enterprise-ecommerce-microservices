@@ -97,6 +97,26 @@ services:
     networks:
       - ecommerce-net
 
+  payment-postgres:
+    image: postgres:17-alpine
+    container_name: payment-postgres
+    environment:
+      POSTGRES_DB: ${PAYMENT_POSTGRES_DB:payment_db}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    ports:
+      - "${PAYMENT_POSTGRES_PORT:5438}:5432"
+    volumes:
+      - payment-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${PAYMENT_POSTGRES_DB:payment_db}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - ecommerce-net
+
   # ──────────────────────────────────────────
   # INFRASTRUCTURE — Config Server (starts first)
   # ──────────────────────────────────────────
@@ -118,6 +138,9 @@ services:
       JWT_ACCESS_EXPIRATION: ${JWT_ACCESS_EXPIRATION}
       JWT_REFRESH_EXPIRATION: ${JWT_REFRESH_EXPIRATION}
       SPRING_JPA_HIBERNATE_DDL_AUTO: ${SPRING_JPA_HIBERNATE_DDL_AUTO}
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY}
+      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:}
+      STRIPE_AUTO_CONFIRM: ${STRIPE_AUTO_CONFIRM:true}
       # Eureka URL used when config-server resolves the placeholder in served configs
       EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: http://discovery-server:8761/eureka
     ports:
@@ -277,6 +300,36 @@ services:
     networks:
       - ecommerce-net
 
+  payment-service:
+    build:
+      context: ./payment-service
+      dockerfile: Dockerfile
+    image: enterprise-ecommerce/payment-service:latest
+    container_name: payment-service
+    depends_on:
+      payment-postgres:
+        condition: service_healthy
+      config-server:
+        condition: service_healthy
+      discovery-server:
+        condition: service_healthy
+    environment:
+      SERVER_PORT: 8085
+      SPRING_DATASOURCE_URL: jdbc:postgresql://payment-postgres:5432/${PAYMENT_POSTGRES_DB:payment_db}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
+      SPRING_JPA_HIBERNATE_DDL_AUTO: ${SPRING_JPA_HIBERNATE_DDL_AUTO}
+      EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: http://discovery-server:8761/eureka
+      CONFIG_SERVER_URI: http://config-server:8888
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY}
+      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:}
+      STRIPE_AUTO_CONFIRM: ${STRIPE_AUTO_CONFIRM:true}
+    ports:
+      - "${PAYMENT_SERVICE_PORT:8085}:8085"
+    restart: unless-stopped
+    networks:
+      - ecommerce-net
+
   # ──────────────────────────────────────────
   # API GATEWAY (starts last — needs Eureka + all services)
   # ──────────────────────────────────────────
@@ -300,6 +353,8 @@ services:
         condition: service_started
       order-service:
         condition: service_started
+      payment-service:
+        condition: service_started
     environment:
       SERVER_PORT: 8282
       EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: http://discovery-server:8761/eureka
@@ -320,6 +375,7 @@ volumes:
   product-postgres-data:
   inventory-postgres-data:
   order-postgres-data:
+  payment-postgres-data:
 
 networks:
   ecommerce-net:
